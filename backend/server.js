@@ -58,17 +58,42 @@ if (JWT_SECRET.length < 32) {
    CORS
 ========================================================= */
 
-const allowedOrigins =
-  FRONTEND_ORIGIN === '*'
-    ? true
-    : FRONTEND_ORIGIN
+/* =========================================================
+   CORS
+========================================================= */
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://capital-hosiery-garments2-0-ten.vercel.app',
+  ...(FRONTEND_ORIGIN
+    ? FRONTEND_ORIGIN
         .split(',')
         .map(origin => origin.trim())
-        .filter(Boolean);
+        .filter(Boolean)
+    : [])
+];
+
+const uniqueOrigins = [...new Set(allowedOrigins)];
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin(origin, callback) {
+      // Allow server-to-server requests / tools with no Origin header
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (uniqueOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.warn('CORS blocked origin:', origin);
+
+      return callback(
+        new Error(`CORS blocked origin: ${origin}`)
+      );
+    },
     credentials: true
   })
 );

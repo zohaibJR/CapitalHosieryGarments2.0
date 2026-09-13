@@ -1,0 +1,9 @@
+{
+  "name": "capital-hosiery-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve . -l 3000",
+    "start": "npx serve . -l 3000"
+  }
+}

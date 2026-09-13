@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Capital Hosiery and Garments — Business Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
+</head>
+<body>
+
+<div class="auth-screen" id="authScreen">
+  <form class="auth-card" id="loginForm">
+    <div class="brand auth-brand">
+      <div class="brand-mark">CHG</div>
+      <div class="brand-text"><div class="name">Capital Hosiery &amp; Garments</div><div class="tag">Secure Business Ledger</div></div>
+    </div>
+    <h1>Sign in</h1>
+    <div class="field"><label>Username</label><input id="loginUsername" autocomplete="username" required></div>
+    <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
+    <div class="err" id="loginError" hidden></div>
+    <button class="btn amber" type="submit">Sign in</button>
+    <button class="btn ghost auth-reset-link" type="button" onclick="showResetPassword()">Reset password</button>
+  </form>
+</div>
+
+<div class="app locked" id="appShell">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">CHG</div>
+      <div class="brand-text"><div class="name">Capital Hosiery &amp; Garments</div><div class="tag">Business Ledger</div></div>
+    </div>
+    <div class="nav">
+      <button class="nav-item active" data-nav="dashboard"><span class="nav-icon">▦</span> Dashboard</button>
+      <button class="nav-item" data-nav="upper"><span class="nav-icon">🏙</span> Upper Shop · Wholesale</button>
+      <button class="nav-item" data-nav="lower"><span class="nav-icon">🏪</span> Lower Shop · Retail</button>
+      <button class="nav-item" data-nav="inventory"><span class="nav-icon">📦</span> Inventory</button>
+      <button class="nav-item" data-nav="vendors"><span class="nav-icon">🚚</span> Vendors</button>
+      <button class="nav-item" data-nav="history"><span class="nav-icon">🧾</span> Transaction History</button>
+      <button class="nav-item" data-nav="reports"><span class="nav-icon">📊</span> Reports &amp; Export</button>
+    </div>
+    <div class="sidebar-foot">
+      <div class="session-user" id="sessionUser">Signed in</div>
+      <button class="side-action" onclick="openChangePassword()">Change password</button>
+      <button class="side-action" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="mobile-session">
+      <span id="mobileSessionUser">Signed in</span>
+      <button onclick="openChangePassword()">Password</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="section active" id="sec-dashboard">
+      <div class="topbar"><div><h1>Dashboard</h1><div class="sub" id="todayDate"></div></div><div class="pill">● Live overview</div></div>
+
+      <div class="grid grid-4" style="margin-bottom:14px;">
+        <div class="stat green"><div class="label">Today's Retail Sales</div><div class="val numeral" id="stRetailCount">0</div></div>
+        <div class="stat green"><div class="label">Today's Retail Revenue</div><div class="val numeral" id="stRetailRev">Rs 0</div></div>
+        <div class="stat amber"><div class="label">Today's Wholesale Sales</div><div class="val numeral" id="stWholesaleToday">Rs 0</div></div>
+        <div class="stat amber"><div class="label">Wholesale Outstanding</div><div class="val numeral" id="stWholesaleOut">Rs 0</div></div>
+      </div>
+      <div class="grid grid-4" style="margin-bottom:14px;">
+        <div class="stat violet"><div class="label">Total Vendor Payable</div><div class="val numeral" id="stVendorPayable">Rs 0</div></div>
+        <div class="stat"><div class="label">Inventory Value (retail)</div><div class="val numeral" id="stInvValue">Rs 0</div></div>
+        <div class="stat brick"><div class="label">Low Stock / Out of Stock</div><div class="val numeral" id="stLowStock">0 / 0</div></div>
+        <div class="stat"><div class="label">Cities / Wholesale Shops</div><div class="val numeral" id="stCitiesShops">0 / 0</div></div>
+      </div>
+      <div class="grid grid-3" style="margin-bottom:14px;">
+        <div class="stat"><div class="label">Today's Recoveries</div><div class="val numeral" id="stTodayRecoveries">0</div></div>
+        <div class="stat"><div class="label">Today's Purchases</div><div class="val numeral" id="stTodayPurchases">0</div></div>
+        <div class="stat"><div class="label">Today's Transfers</div><div class="val numeral" id="stTodayTransfers">0</div></div>
+      </div>
+
+      <div class="dashboard-insights">
+        <div class="panel trend-panel">
+          <div class="panel-heading"><div><h2>Business pulse</h2><div class="panel-kicker">Sales, recoveries and purchases · last 7 days</div></div><span class="chart-legend"><i class="legend-dot sales"></i>Sales <i class="legend-dot recovery"></i>Recoveries <i class="legend-dot purchase"></i>Purchases</span></div>
+          <div id="dashTrendChart" class="trend-chart"></div>
+        </div>
+        <div class="panel health-panel">
+          <div class="panel-heading"><div><h2>Stock health</h2><div class="panel-kicker">Every product across both shops</div></div><span class="health-icon">◒</span></div>
+          <div id="dashStockHealth"></div>
+        </div>
+      </div>
+      <div class="panel city-chart-panel">
+        <div class="panel-heading"><div><h2>Outstanding by city</h2><div class="panel-kicker">Where follow-up will have the biggest impact</div></div><span class="panel-kicker">Wholesale receivables</span></div>
+        <div id="dashCityChart" class="city-chart"></div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="panel"><h2>Wholesale Outstanding — By City</h2><div id="dashCityList"></div></div>
+        <div class="panel"><h2>Top Wholesale Customers <span class="count">by outstanding</span></h2><div id="dashTopCustomers"></div></div>
+      </div>
+      <div class="grid grid-2">
+        <div class="panel"><h2>Recent Retail Sales</h2><div id="dashRecentRetail"></div></div>
+        <div class="panel"><h2>Low / Out of Stock</h2><div id="dashLowStock"></div></div>
+      </div>
+      <div class="grid grid-2">
+        <div class="panel"><h2>Recent Stock Transfers</h2><div id="dashTransfers"></div></div>
+        <div class="panel"><h2>Vendors — Highest Payable</h2><div id="dashTopVendors"></div></div>
+      </div>
+    </div>
+
+    <!-- UPPER SHOP -->
+    <div class="section" id="sec-upper">
+      <div class="topbar">
+        <div><h1>Upper Shop — Wholesale</h1><div class="sub">City → Shop → full ledger. Sales are linked to inventory.</div></div>
+        <div class="btnrow"><button class="btn ghost" onclick="exportCityData()">⬇ Export This City</button><button class="btn ghost" onclick="openEditCity()">✎ Edit City</button><button class="btn ghost" onclick="openAddCity()">+ New City</button><button class="btn ghost" onclick="openAddShop()">+ Add Shop</button><button class="btn amber" onclick="openNewRetailSale('Upper')">+ New Sale (Counter)</button></div>
+      </div>
+      <div class="chip-row" id="cityTabs"></div>
+
+      <div class="grid grid-4" style="margin-bottom:14px;" id="cityStatGrid"></div>
+
+      <div class="panel">
+        <h2 id="cityPanelTitle">Shops <span class="count" id="cityShopCount"></span></h2>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Shop</th><th>Owner / Phone</th><th>Credit Limit</th><th>Supplied</th><th>Recovered</th><th>Status</th></tr></thead>
+          <tbody id="shopList"></tbody>
+        </table></div>
+      </div>
+
+      <div class="panel">
+        <h2>Today's Counter Sales (Upper Shop) <span class="count" id="upperTodayCount"></span></h2>
+        <div id="upperTodaySales"></div>
+      </div>
+    </div>
+
+    <!-- LOWER SHOP -->
+    <div class="section" id="sec-lower">
+      <div class="topbar">
+        <div><h1>Lower Shop — Retail Counter</h1><div class="sub" id="lowerDate"></div></div>
+        <button class="btn amber" onclick="openNewRetailSale('Lower')">+ New Sale</button>
+      </div>
+
+      <div class="grid grid-4" style="margin-bottom:14px;">
+        <div class="stat green"><div class="label">Today's Sales</div><div class="val numeral" id="lowerTodayCount">0</div></div>
+        <div class="stat"><div class="label">Today's Revenue</div><div class="val numeral" id="lowerTodayRev">Rs 0</div></div>
+        <div class="stat brick"><div class="label">Today's Balance Due</div><div class="val numeral" id="lowerTodayDue">Rs 0</div></div>
+        <div class="stat violet"><div class="label">Top Product Today</div><div class="val numeral" id="lowerTopProduct" style="font-size:15px;">—</div></div>
+      </div>
+
+      <div class="panel"><h2>Today's Sales <span class="count" id="lowerListCount"></span></h2><div id="lowerSaleList"></div></div>
+      <div class="panel">
+        <h2>Retail Customers <span class="count">(named, non walk-in)</span></h2>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Customer</th><th>Total Purchased</th><th>Status</th></tr></thead>
+          <tbody id="retailDueList"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- INVENTORY -->
+    <div class="section" id="sec-inventory">
+      <div class="topbar">
+        <div><h1>Inventory</h1><div class="sub">Stock is derived from purchases, transfers &amp; sales — never edited directly</div></div>
+        <div class="btnrow">
+          <button class="btn violet" onclick="openTransfer()">⇄ Transfer Upper → Lower</button>
+          <button class="btn amber" onclick="openAddProduct()">+ Add Product</button>
+        </div>
+      </div>
+
+      <div class="chip-row" id="invShopTabs"></div>
+      <div class="chip-row" id="invCatTabs"></div>
+      <div class="chip-row" id="invSeasonTabs"></div>
+      <div class="searchbox"><input id="invSearch" placeholder="Search product name or SKU..." oninput="renderInventory()"></div>
+
+      <div class="panel">
+        <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>SKU</th><th>Product</th><th>Cost</th><th>W/Sale</th><th>Retail</th><th>Stock (pcs)</th><th>Boxes</th><th>Adjust / Edit</th></tr></thead>
+          <tbody id="invTableBody"></tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Recent Stock Transfers <span class="count" id="xferCount"></span></h2>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Date</th><th>Product</th><th>SKU</th><th>Boxes</th><th>Pieces</th><th>Notes</th></tr></thead>
+          <tbody id="xferList"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- VENDORS -->
+    <div class="section" id="sec-vendors">
+      <div class="topbar">
+        <div><h1>Vendors — Suppliers</h1><div class="sub">Purchases increase inventory automatically; payable is derived from purchases − payments</div></div>
+        <div class="btnrow"><button class="btn ghost" onclick="openAddVendor()">+ Add Vendor</button><button class="btn amber" onclick="openNewPurchase()">+ New Purchase</button></div>
+      </div>
+
+      <div class="grid grid-3" style="margin-bottom:14px;">
+        <div class="stat violet"><div class="label">Total Payable</div><div class="val numeral" id="vendPayableTotal">Rs 0</div></div>
+        <div class="stat"><div class="label">Total Vendors</div><div class="val numeral" id="vendCount">0</div></div>
+        <div class="stat green"><div class="label">Cleared Vendors</div><div class="val numeral" id="vendClearedCount">0</div></div>
+      </div>
+
+      <div class="panel">
+        <h2>Vendors <span class="count" id="vendListCount"></span></h2>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Vendor</th><th>Contact / Phone</th><th>Purchased</th><th>Paid</th><th>Status</th></tr></thead>
+          <tbody id="vendorList"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="section" id="sec-history">
+      <div class="topbar"><div><h1>Transaction History</h1><div class="sub">Upper Shop (wholesale + vendors) and Lower Shop (retail) kept separate — no mixed-up filters</div></div></div>
+      <div class="chip-row" id="histSectionTabs"></div>
+      <div class="filter-bar" id="histFilterBar"></div>
+      <div class="panel"><h2>Records <span class="count" id="histCount"></span></h2><div id="histList"></div></div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="section" id="sec-reports">
+      <div class="topbar"><div><h1>Reports &amp; Export</h1><div class="sub">Exports pull the full underlying transaction data, not just what's on screen</div></div></div>
+      <div class="filter-bar">
+        <label style="font-size:12.5px;font-weight:600;color:var(--muted);">Date range:</label>
+        <input type="date" id="repFrom" onchange="renderReportSummary()"><input type="date" id="repTo" onchange="renderReportSummary()">
+        <button class="chip sm" onclick="setRepRange('today')">Today</button>
+        <button class="chip sm" onclick="setRepRange('week')">This Week</button>
+        <button class="chip sm" onclick="setRepRange('month')">This Month</button>
+        <button class="btn ghost sm" onclick="document.getElementById('repFrom').value='';document.getElementById('repTo').value='';renderReportSummary();toast('Filter cleared')">Clear</button>
+      </div>
+      <div class="grid grid-4" id="repSummaryGrid" style="margin-bottom:18px;"></div>
+
+      <div class="panel">
+        <h2>📈 Wholesale &amp; Recovery Reports</h2>
+        <div class="grid grid-3">
+          <div class="report-card"><div class="rc-title">Wholesale Sales</div><div class="rc-desc">All wholesale invoices, by shop &amp; city.</div><button class="btn amber sm" onclick="exportReport('wholesale')">⬇ Export Excel</button></div>
+          <div class="report-card"><div class="rc-title">Recoveries</div><div class="rc-desc">Every wholesale recovery payment received.</div><button class="btn amber sm" onclick="exportReport('recovery')">⬇ Export Excel</button></div>
+          <div class="report-card"><div class="rc-title">Customer Outstanding</div><div class="rc-desc">Current balance owed by every wholesale shop.</div><button class="btn amber sm" onclick="exportReport('customerOutstanding')">⬇ Export Excel</button></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>🛒 Sales &amp; Profit Reports</h2>
+        <div class="grid grid-3">
+          <div class="report-card"><div class="rc-title">Retail Sales</div><div class="rc-desc">Every counter sale — items, payment &amp; due.</div><button class="btn amber sm" onclick="exportReport('retail')">⬇ Export Excel</button></div>
+          <div class="report-card"><div class="rc-title">Product Sales</div><div class="rc-desc">Qty &amp; revenue sold per product — retail + wholesale combined.</div><button class="btn amber sm" onclick="exportReport('productSales')">⬇ Export Excel</button></div>
+          <div class="report-card"><div class="rc-title">Profit &amp; Margin</div><div class="rc-desc">Cost vs. selling price — profit per product and overall, retail + wholesale.</div><button class="btn amber sm" onclick="exportReport('profitMargin')">⬇ Export Excel</button></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>🚚 Vendors &amp; Purchasing Reports</h2>
+        <div class="grid grid-2">
+          <div class="report-card"><div class="rc-title">Vendor Purchases</div><div class="rc-desc">Every purchase made from every vendor.</div><button class="btn amber sm" onclick="exportReport('vendorPurchase')">⬇ Export Excel</button></div>
+          <div class="report-card"><div class="rc-title">Vendor Payable</div><div class="rc-desc">Current amount owed to every vendor.</div><button class="btn amber sm" onclick="exportReport('vendorPayable')">⬇ Export Excel</button></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>📦 Inventory &amp; Stock Movement Reports</h2>
+        <div class="grid grid-2">
+          <div class="report-card"><div class="rc-title">Inventory</div><div class="rc-desc">Full stock, by shop, category &amp; season.</div><button class="btn amber sm" onclick="exportReport('inventory')">⬇ Export Excel</button></div>
+          <div class="report-card"><div class="rc-title">Stock Movement</div><div class="rc-desc">Every Upper → Lower transfer, with box detail.</div><button class="btn amber sm" onclick="exportReport('stockMovement')">⬇ Export Excel</button></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>🧾 Complete Records</h2>
+        <div class="report-card" style="max-width:420px;"><div class="rc-title">Full Transaction Log</div><div class="rc-desc">Every transaction of every type in one file, date-sorted.</div><button class="btn amber sm" onclick="exportReport('all')">⬇ Export Excel</button></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="tabbar">
+  <button class="tab-item active" data-nav="dashboard"><span class="tab-icon">▦</span>Home</button>
+  <button class="tab-item" data-nav="upper"><span class="tab-icon">🏙</span>Wholesale</button>
+  <button class="tab-item" data-nav="lower"><span class="tab-icon">🏪</span>Retail</button>
+  <button class="tab-item" data-nav="inventory"><span class="tab-icon">📦</span>Stock</button>
+  <button class="tab-item" data-nav="vendors"><span class="tab-icon">🚚</span>Vendors</button>
+  <button class="tab-item" data-nav="history"><span class="tab-icon">🧾</span>History</button>
+  <button class="tab-item" data-nav="reports"><span class="tab-icon">📊</span>Reports</button>
+</div>
+
+<div class="overlay" id="modalOverlay"><div class="modal" id="modalBody"></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

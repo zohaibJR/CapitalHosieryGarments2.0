@@ -333,7 +333,7 @@ function productSku(pid){ const p=products.find(x=>x.id===pid); return p?p.sku:'
 /* =====================================================================
    STATE (UI selection only — not business data)
 ===================================================================== */
-let ui = { activeCity: cities[0], invShop:'Upper', invCat:'Men', invSeason:'Summer',
+let ui = { activeCity: cities[0], invShop:'Upper', invCat:'All', invSeason:'All',
   hist:{ section:'Upper', type:'', city:'', customer:'', vendor:'', product:'', from:'', to:'', search:'' } };
 
 /* =====================================================================
@@ -345,7 +345,12 @@ function goTo(sec){
   document.querySelectorAll('.nav-item, .tab-item').forEach(b=>b.classList.toggle('active', b.dataset.nav===sec));
   renderAll();
 }
-document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>goTo(b.dataset.nav)));
+document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>{
+  /* Navigating from the menu shows the full catalogue; a drill-down
+     (e.g. a low-stock tile) still keeps the filter it sets. */
+  if(b.dataset.nav==='inventory'){ ui.invCat='All'; ui.invSeason='All'; }
+  goTo(b.dataset.nav);
+}));
 function toast(msg, isErr){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show'+(isErr?' err':''); setTimeout(()=>t.className='toast',2400); }
 function openModal(html, wide){ document.getElementById('modalBody').className = 'modal'+(wide?' wide':''); document.getElementById('modalBody').innerHTML = html; document.getElementById('modalOverlay').classList.add('open'); }
 function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
@@ -1140,13 +1145,15 @@ function saveRetailReturn(saleId){
 function renderInventory(){
   document.getElementById('invShopTabs').innerHTML = ['Upper','Lower'].map(s=>
     `<button class="chip ${s===ui.invShop?'active':''}" onclick="setInvShop('${s}')">${s==='Upper'?'🏙 Upper Shop':'🏪 Lower Shop'}</button>`).join('');
-  document.getElementById('invCatTabs').innerHTML = CATS.map(c=>
+  document.getElementById('invCatTabs').innerHTML = ['All', ...CATS].map(c=>
     `<button class="chip sm ${c===ui.invCat?'active':''}" onclick="setInvCat('${c}')">${c}</button>`).join('');
-  document.getElementById('invSeasonTabs').innerHTML = SEASONS.map(se=>
-    `<button class="chip sm violet ${se===ui.invSeason?'active':''}" onclick="setInvSeason('${se}')">${se==='Summer'?'☀ Summer':'❄ Winter'}</button>`).join('');
+  document.getElementById('invSeasonTabs').innerHTML = ['All', ...SEASONS].map(se=>
+    `<button class="chip sm violet ${se===ui.invSeason?'active':''}" onclick="setInvSeason('${se}')">${se==='Summer'?'☀ Summer':se==='Winter'?'❄ Winter':se}</button>`).join('');
 
   const search = (document.getElementById('invSearch')?.value||'').toLowerCase();
-  let rows = products.filter(p=>p.category===ui.invCat && p.season===ui.invSeason);
+  let rows = products.filter(p=>
+    (ui.invCat==='All'   || p.category===ui.invCat) &&
+    (ui.invSeason==='All' || p.season===ui.invSeason));
   if(search) rows = rows.filter(p=>p.name.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search));
 
   document.getElementById('invTableBody').innerHTML = rows.map(p=>{

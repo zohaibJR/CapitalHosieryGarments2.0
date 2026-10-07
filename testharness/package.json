@@ -1,0 +1,12 @@
+{
+  "name": "capital-hosiery-full-stack-testharness",
+  "version": "1.0.0",
+  "private": true,
+  "description": "End-to-end test: the real frontend/app.js running in a headless browser (jsdom), driving every on-screen action exactly as a person would, talking over real HTTP to the real backend route code (../backend/routes.js, ../backend/stateRoutes.js), backed by the in-memory fake repository (../backend/test/fakeRepo.js) instead of a live MongoDB.",
+  "scripts": {
+    "test": "node run.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  }
+}

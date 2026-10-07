@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "db:clear": "node scripts/clear-db.js"
+    "db:clear": "node scripts/clear-db.js",
+    "test": "node test/ledgerLogic.test.js && node test/routes.test.js && node test/migrate.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

@@ -111,398 +111,23 @@ app.use((req, res, next) => {
 });
 
 /* =========================================================
-   MONGOOSE JSON CONFIG
+   MODELS (schemas live in models.js — shared with repo.js/routes.js/migrate.js
+   so the new granular API and the legacy /api/state routes below use the
+   exact same collections/fields; nothing about these schemas' existing
+   fields or validation was changed for this phase, only additive fields
+   were introduced there: voided/voidedAt/voidedReason/voidedBy on
+   LedgerEntry, skuLower on Product, plus two brand-new collections,
+   Counter and AuditLog, that existing routes never touch.)
 ========================================================= */
 
-const cleanJson = {
-  versionKey: false,
-  transform: (_doc, ret) => {
-    delete ret._id;
-    return ret;
-  }
-};
-
-/* =========================================================
-   USER MODEL
-========================================================= */
-
-const User = mongoose.model(
-  'User',
-  new mongoose.Schema(
-    {
-      username: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-        lowercase: true
-      },
-
-      passwordHash: {
-        type: String,
-        required: true
-      },
-
-      passwordChangedAt: {
-        type: Date,
-        default: Date.now
-      }
-    },
-    {
-      timestamps: true,
-      toJSON: cleanJson
-    }
-  )
-);
-
-/* =========================================================
-   PRODUCT MODEL
-========================================================= */
-
-const Product = mongoose.model(
-  'Product',
-  new mongoose.Schema(
-    {
-      id: {
-        type: String,
-        required: true,
-        unique: true,
-        index: true
-      },
-
-      sku: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true
-      },
-
-      name: {
-        type: String,
-        required: true,
-        trim: true
-      },
-
-      category: {
-        type: String,
-        required: true,
-        trim: true
-      },
-
-      season: {
-        type: String,
-        required: true,
-        trim: true
-      },
-
-      cost: {
-        type: Number,
-        required: true,
-        min: 0
-      },
-
-      wsale: {
-        type: Number,
-        required: true,
-        min: 0
-      },
-
-      retail: {
-        type: Number,
-        required: true,
-        min: 0
-      },
-
-      minStock: {
-        type: Number,
-        default: 0,
-        min: 0
-      },
-
-      unit: {
-        type: String,
-        default: 'pcs',
-        trim: true
-      },
-
-      packSize: {
-        type: Number,
-        default: 1,
-        min: 1
-      },
-
-      active: {
-        type: Boolean,
-        default: true
-      }
-    },
-    {
-      timestamps: true,
-      toJSON: cleanJson
-    }
-  )
-);
-
-/* =========================================================
-   CITY MODEL
-========================================================= */
-
-const City = mongoose.model(
-  'City',
-  new mongoose.Schema(
-    {
-      name: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true
-      }
-    },
-    {
-      timestamps: true,
-      toJSON: cleanJson
-    }
-  )
-);
-
-/* =========================================================
-   CUSTOMER MODEL
-========================================================= */
-
-const Customer = mongoose.model(
-  'Customer',
-  new mongoose.Schema(
-    {
-      id: {
-        type: String,
-        required: true,
-        unique: true,
-        index: true
-      },
-
-      city: {
-        type: String,
-        required: true,
-        trim: true
-      },
-
-      shop: {
-        type: String,
-        required: true,
-        trim: true
-      },
-
-      owner: {
-        type: String,
-        required: true,
-        trim: true
-      },
-
-      phone: {
-        type: String,
-        default: '',
-        trim: true
-      },
-
-      address: {
-        type: String,
-        default: '',
-        trim: true
-      },
-
-      opening: {
-        type: Number,
-        default: 0,
-        min: 0
-      },
-
-      creditLimit: {
-        type: Number,
-        default: 0,
-        min: 0
-      }
-    },
-    {
-      timestamps: true,
-      toJSON: cleanJson
-    }
-  )
-);
-
-/* =========================================================
-   VENDOR MODEL
-========================================================= */
-
-const Vendor = mongoose.model(
-  'Vendor',
-  new mongoose.Schema(
-    {
-      id: {
-        type: String,
-        required: true,
-        unique: true,
-        index: true
-      },
-
-      name: {
-        type: String,
-        required: true,
-        trim: true
-      },
-
-      contact: {
-        type: String,
-        default: '',
-        trim: true
-      },
-
-      phone: {
-        type: String,
-        default: '',
-        trim: true
-      },
-
-      address: {
-        type: String,
-        default: '',
-        trim: true
-      },
-
-      opening: {
-        type: Number,
-        default: 0,
-        min: 0
-      }
-    },
-    {
-      timestamps: true,
-      toJSON: cleanJson
-    }
-  )
-);
-
-/* =========================================================
-   LEDGER MODEL
-========================================================= */
-
-const LedgerEntry = mongoose.model(
-  'LedgerEntry',
-  new mongoose.Schema(
-    {
-      id: {
-        type: Number,
-        required: true,
-        unique: true,
-        index: true
-      },
-
-      type: {
-        type: String,
-        required: true,
-        index: true
-      },
-
-      date: {
-        type: String,
-        required: true,
-        index: true
-      },
-
-      time: String,
-
-      customerId: String,
-      customerName: String,
-      vendorId: String,
-      productId: String,
-
-      saleId: Number,
-      purchaseId: Number,
-
-      lineId: String,
-      invoiceRef: String,
-
-      method: String,
-      shop: String,
-
-      qty: Number,
-      packQty: Number,
-
-      amount: Number,
-      paidNow: Number,
-      price: Number,
-
-      reason: String,
-      notes: String,
-
-      items: [
-        {
-          productId: String,
-          qty: Number,
-          price: Number,
-          packQty: Number,
-          lineId: String
-        }
-      ]
-    },
-    {
-      timestamps: true,
-      toJSON: cleanJson
-    }
-  )
-);
+const { cleanJson, User, Product, City, Customer, Vendor, LedgerEntry, Counter, AuditLog } = require('./models');
+const repo = require('./repo');
+const { createApiRouter } = require('./routes');
+const { createStateRouter } = require('./stateRoutes');
 
 /* =========================================================
    HELPERS
 ========================================================= */
-
-function stripMongo(row) {
-  const copy = { ...row };
-
-  delete copy._id;
-  delete copy.__v;
-  delete copy.createdAt;
-  delete copy.updatedAt;
-
-  return copy;
-}
-
-async function readState() {
-  const [
-    products,
-    cityDocs,
-    customers,
-    vendors,
-    ledger
-  ] = await Promise.all([
-    Product.find().sort({ id: 1 }).lean(),
-
-    City.find().sort({ name: 1 }).lean(),
-
-    Customer.find()
-      .sort({ city: 1, shop: 1 })
-      .lean(),
-
-    Vendor.find()
-      .sort({ name: 1 })
-      .lean(),
-
-    LedgerEntry.find()
-      .sort({ id: 1 })
-      .lean()
-  ]);
-
-  return {
-    products: products.map(stripMongo),
-
-    cities: cityDocs.map(city => city.name),
-
-    customers: customers.map(stripMongo),
-
-    vendors: vendors.map(stripMongo),
-
-    ledger: ledger.map(stripMongo)
-  };
-}
 
 /* =========================================================
    JWT FUNCTIONS
@@ -728,46 +353,16 @@ function checkLoginRate(req, res, next) {
 }
 
 /* =========================================================
-   DATABASE STATE REPLACEMENT
+   (removed) DATABASE STATE REPLACEMENT
+   ---------------------------------------------------------------------
+   The full-collection-replace helper that used to live here, and the
+   PUT /api/state route that was its only caller, have both been removed.
+   That route let a stale browser tab overwrite entire collections with
+   whatever it last held in memory — exactly the risk this phase's
+   granular /api/ledger, /api/products, /api/customers, /api/vendors
+   endpoints (routes.js) exist to eliminate. See DATABASE_ARCHITECTURE.md.
+   GET /api/state is unchanged below and remains how the app hydrates.
 ========================================================= */
-
-async function replaceCollection(
-  Model,
-  rows,
-  key = 'id'
-) {
-  const ids = rows.map(row => row[key]);
-
-  if (ids.length) {
-    await Model.deleteMany({
-      [key]: {
-        $nin: ids
-      }
-    });
-  } else {
-    await Model.deleteMany({});
-  }
-
-  if (!rows.length) {
-    return;
-  }
-
-  await Model.bulkWrite(
-    rows.map(row => ({
-      updateOne: {
-        filter: {
-          [key]: row[key]
-        },
-
-        update: {
-          $set: row
-        },
-
-        upsert: true
-      }
-    }))
-  );
-}
 
 /* =========================================================
    HEALTH ROUTE
@@ -1068,78 +663,37 @@ app.post(
 );
 
 /* =========================================================
-   GET STATE
+   GRANULAR RECORD-LEVEL API (new for this phase)
+   ---------------------------------------------------------------------
+   Everything under here — POST/PUT /api/products, /api/cities,
+   /api/customers, /api/vendors, and POST/PUT/void /api/ledger, plus
+   GET /api/audit — replaces the old pattern of "mutate the whole
+   in-memory state, then overwrite the whole database" with one
+   targeted write per business action. See routes.js for the route
+   definitions and repo.js for how they talk to MongoDB (with a
+   documented fallback when the deployment doesn't support multi-
+   document transactions).
+
+   GET/PUT /api/state below this block are UNCHANGED and kept exactly
+   as they were: GET /api/state remains how the app hydrates on load,
+   and PUT /api/state remains available, but the frontend no longer
+   calls it after every action — see DATABASE_ARCHITECTURE.md in the project root for details.
 ========================================================= */
 
-app.get(
-  '/api/state',
-  requireAuth,
-  async (_req, res, next) => {
-    try {
-      res.json(
-        await readState()
-      );
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+app.use('/api', requireAuth, createApiRouter(repo));
 
 /* =========================================================
-   UPDATE STATE
+   STATE — GET (unchanged, read-only hydration) / PUT (disabled)
+   ---------------------------------------------------------------------
+   Factored into stateRoutes.js (same repo-driven pattern as routes.js)
+   so it can be exercised with real HTTP requests in tests. PUT used to
+   overwrite entire collections with whatever the calling browser
+   currently held in memory — exactly the "stale state silently
+   overwrites newer data" risk this phase's granular, record-level
+   endpoints (routes.js) exist to remove. See DATABASE_ARCHITECTURE.md.
 ========================================================= */
 
-app.put(
-  '/api/state',
-  requireAuth,
-  async (req, res, next) => {
-    try {
-      const {
-        products = [],
-        cities = [],
-        customers = [],
-        vendors = [],
-        ledger = []
-      } = req.body || {};
-
-      await Promise.all([
-        replaceCollection(
-          Product,
-          products
-        ),
-
-        replaceCollection(
-          City,
-          cities.map(name => ({
-            name
-          })),
-          'name'
-        ),
-
-        replaceCollection(
-          Customer,
-          customers
-        ),
-
-        replaceCollection(
-          Vendor,
-          vendors
-        ),
-
-        replaceCollection(
-          LedgerEntry,
-          ledger
-        )
-      ]);
-
-      res.json(
-        await readState()
-      );
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+app.use('/api', requireAuth, createStateRouter(repo));
 
 /* =========================================================
    ERROR HANDLER
@@ -1179,6 +733,18 @@ async function startServer() {
     console.log(
       'MongoDB connected successfully.'
     );
+
+    // Seed/advance the shared id Counter so server-assigned ids never collide
+    // with any id/lineId already present in this database. This is the same
+    // idempotent, additive-only step migrate.js performs — running it again
+    // here on every boot is a safety net, not a substitute for running
+    // migrate.js once before first deploying this version (see migrate.js).
+    try {
+      const { migrate } = require('./migrate');
+      await migrate({ log: () => {} });
+    } catch (migrateError) {
+      console.error('Startup counter/backfill check failed (non-fatal):', migrateError.message);
+    }
 
     let existingAdmin =
       await User.findOne({
